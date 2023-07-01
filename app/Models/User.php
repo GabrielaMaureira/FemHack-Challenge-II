@@ -43,4 +43,27 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function generate2faSecret()
+    {
+        $google2fa = new Google2FA();
+        $this->google2fa_secret = $google2fa->generateSecretKey();
+        $this->save();
+    }
+
+    public function getQRCodeGoogleUrl()
+    {
+        $google2fa = new Google2FA();
+        return $google2fa->getQRCodeGoogleUrl(
+            config('app.name'),
+            $this->email,
+            $this->google2fa_secret
+        );
+    }
+
+    public function validate2faCode($code)
+    {
+        $google2fa = new Google2FA();
+        return $google2fa->verifyKey($this->google2fa_secret, $code);
+    }
 }

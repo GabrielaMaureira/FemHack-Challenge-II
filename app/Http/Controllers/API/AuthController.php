@@ -16,38 +16,51 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required',
             'password' => 'required'
-       ]);
+        ]);
 
-       $data = [
+        $data = [
             'email' => $request->email,
             'password' => $request->password,
-       ];
+        ];
 
         if (Auth::attempt($data)) {
             $user = Auth::user();
-            $token = $user->createToken('auth_token')->accessToken;
-            return response()->json(['message' => 'Successfully logged in', 'user' => $user->name, 'auth_token' => $token], 200);
-    }
+
+            if ($user->has2faEnabled()) {
+                if ($user->validate2faCode($request->code)) {
+                    $token = $user->createToken('auth_token')->accessToken;
+                    return response()->json(['message' => 'Successfully logged in', 'user' => $user->name, 'auth_token' => $token], 200);
+                } else {
+                    return response()->json(['message' => 'Invalid verification code'], 401);
+                }
+            } else {
+                $token = $user->createToken('auth_token')->accessToken;
+                return response()->json(['message' => 'Successfully logged in', 'user' => $user->name, 'auth_token' => $token], 200);
+            }
+        }
 
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
     public function register(Request $request)
     {
-       $request->validate([
-            'name' => 'required|max:255|unique:users',
-            'email' => 'required|email|unique:users',
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()],
-       ]);
+        $request->validate([
+                'name' => 'required|max:255|unique:users',
+                'email' => 'required|email|unique:users',
+                'password' => ['required', 'confirmed', Password::min(8)->mixedCase()],
+        ]);
 
-       $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-       ])->assignRole('user');
+        $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+        ])->assignRole('user');
 
-       $token = $user->createToken('auth_token')->accessToken;
-       return response()->json(['user' => $user->name, 'email' => $user->email, 'auth_token' => $token], 201);
+        $user->generate2faSecret();
+        $qrCodeUrl = $user->getQRCodeGoogleUrl();
+        
+        $token = $user->createToken('auth_token')->accessToken;
+        return response()->json(['user' => $user->name, 'email' => $user->email, 'auth_token' => $token, 'qr_code_url' => $qrCodeUrl], 201);
     }
 
     public function logout()
