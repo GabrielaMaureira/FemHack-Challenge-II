@@ -1,8 +1,12 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\HomeController;
+use App\Http\Controllers\API\LogController;
+use Spatie\Permission\Middlewares\RoleMiddleware;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -15,9 +19,11 @@ use App\Http\Controllers\API\AuthController;
 |
 */
 
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
     
     Route::middleware('auth:api')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/home', [HomeController::class, 'home'])->middleware('role:admin|user');
+        Route::get('/log', [LogController::class, 'log'])->middleware('role:admin');
     });

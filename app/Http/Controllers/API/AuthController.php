@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +44,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-       ]);
+       ])->assignRole('user');
 
        $token = $user->createToken('auth_token')->accessToken;
        return response()->json(['user' => $user->name, 'email' => $user->email, 'auth_token' => $token], 201);
