@@ -48,4 +48,11 @@ class AuthController extends Controller
        $token = $user->createToken('auth_token')->accessToken;
        return response()->json(['user' => $user->name, 'email' => $user->email, 'auth_token' => $token], 201);
     }
+
+    public function logout()
+    {
+        $token = Auth::user()->token();
+        $token->revoke();
+        return response()->json([ 'message' => 'Successfully logged out'], 200);
+    }
 }
